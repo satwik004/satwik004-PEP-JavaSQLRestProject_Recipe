@@ -5,6 +5,7 @@ import io.javalin.http.Context;
 
 import com.revature.service.AuthenticationService;
 import com.revature.service.ChefService;
+import com.revature.model.Chef;
 
 
 
@@ -32,7 +33,8 @@ public class AuthenticationController {
      * @param authService the service used to manage authentication-related operations
      */
     public AuthenticationController(ChefService chefService, AuthenticationService authService) {
-        
+        this.chefService = chefService;
+        this.authService = authService;
     }
 
     /**
@@ -45,7 +47,16 @@ public class AuthenticationController {
      * @param ctx the Javalin context containing the chef information in the request body
      */
     public void register(Context ctx) {
-        
+        Chef chef = ctx.bodyAsClass(Chef.class);
+
+        // Attempt to register; if service indicates conflict, return 409
+        Chef registered = authService.registerChef(chef);
+        if (registered == null) {
+            ctx.status(409).result("Username already exists");
+            return;
+        }
+
+        ctx.status(201).json(registered);
     }
 
     /**
@@ -56,7 +67,16 @@ public class AuthenticationController {
      * @param ctx the Javalin context containing the chef login credentials in the request body
      */
     public void login(Context ctx) {
-        
+        Chef credentials = ctx.bodyAsClass(Chef.class);
+        String token = authService.login(credentials);
+
+        if (token == null || token.isEmpty()) {
+            ctx.status(401).result("Invalid username or password");
+            return;
+        }
+
+        ctx.header("Authorization", "Bearer " + token);
+        ctx.status(200).result(token);
     }
 
     /**
@@ -65,7 +85,21 @@ public class AuthenticationController {
      * @param ctx the Javalin context, containing the Authorization token in the request header
      */
     public void logout(Context ctx) {
-        
+        String authHeader = ctx.header("Authorization");
+        String token = null;
+        if (authHeader != null) {
+            if (authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring("Bearer ".length());
+            } else {
+                token = authHeader;
+            }
+        }
+
+        if (token != null && !token.isEmpty()) {
+            authService.logout(token);
+        }
+
+        ctx.status(200).result("Logout successful");
     }
 
     /**

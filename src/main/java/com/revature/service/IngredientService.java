@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.revature.dao.IngredientDAO;
 import com.revature.model.Ingredient;
 import com.revature.util.Page;
+import com.revature.util.PageOptions;
 
 
 /**
@@ -30,7 +31,7 @@ public class IngredientService {
      */
 
     public IngredientService(IngredientDAO ingredientDAO) {
-       
+       this.ingredientDAO = ingredientDAO;
     }
 
     /**
@@ -40,7 +41,7 @@ public class IngredientService {
      * @return an Optional containing the Ingredient if found, or an empty Optional if not found
      */
     public Optional<Ingredient> findIngredient(int id) {
-        return null;
+        return Optional.ofNullable(ingredientDAO.getIngredientById(id));
     }
 
     /**
@@ -54,7 +55,11 @@ public class IngredientService {
      * @return a Page object containing the list of Ingredients matching the criteria
      */
     public Page<Ingredient> searchIngredients(String term, int page, int pageSize, String sortBy, String sortDirection) {
-        return null;
+        PageOptions options = new PageOptions(page, pageSize, sortBy, sortDirection);
+        if (term == null) {
+            return ingredientDAO.getAllIngredients(options);
+        }
+        return ingredientDAO.searchIngredients(term, options);
     }
 
     /**
@@ -65,7 +70,10 @@ public class IngredientService {
      * @return a list of Ingredient objects that match the search term
      */
     public List<Ingredient> searchIngredients(String term) {
-        return null;
+        if (term == null) {
+            return ingredientDAO.getAllIngredients();
+        }
+        return ingredientDAO.searchIngredients(term);
     }
 
     /**
@@ -75,7 +83,10 @@ public class IngredientService {
      */
 
     public void deleteIngredient(int id) {
-        
+        Ingredient ingredient = ingredientDAO.getIngredientById(id);
+        if (ingredient != null) {
+            ingredientDAO.deleteIngredient(ingredient);
+        }
     }
 
     /**
@@ -86,6 +97,11 @@ public class IngredientService {
      * @param ingredient the Ingredient entity to be saved or updated
      */
     public void saveIngredient(Ingredient ingredient) {
-        
+        if (ingredient.getId() == 0) {
+            int newId = ingredientDAO.createIngredient(ingredient);
+            ingredient.setId(newId);
+        } else {
+            ingredientDAO.updateIngredient(ingredient);
+        }
     }
 }

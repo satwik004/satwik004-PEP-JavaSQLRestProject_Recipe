@@ -33,7 +33,7 @@ public class IngredientDAO {
      * @param connectionUtil the utility used to connect to the database
      */
     public IngredientDAO(ConnectionUtil connectionUtil) {
-        
+        this.connectionUtil = connectionUtil;
     }
 
     /**
@@ -43,6 +43,17 @@ public class IngredientDAO {
      * @return the Ingredient object with the specified id.
      */
     public Ingredient getIngredientById(int id) {
+        try (var conn = connectionUtil.getConnection();
+             var ps = conn.prepareStatement("SELECT * FROM INGREDIENT WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapSingleRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -53,6 +64,22 @@ public class IngredientDAO {
      * @return the unique identifier of the created Ingredient.
      */
     public int createIngredient(Ingredient ingredient) {
+        try (var conn = connectionUtil.getConnection();
+             var ps = conn.prepareStatement(
+                     "INSERT INTO INGREDIENT (name) VALUES (?)",
+                     java.sql.Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, ingredient.getName());
+            ps.executeUpdate();
+            try (var keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int newId = keys.getInt(1);
+                    ingredient.setId(newId);
+                    return newId;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
@@ -62,7 +89,18 @@ public class IngredientDAO {
      * @param ingredient the Ingredient object to be deleted.
      */
     public void deleteIngredient(Ingredient ingredient) {
-        
+        try (var conn = connectionUtil.getConnection()) {
+            try (var ps = conn.prepareStatement("DELETE FROM RECIPE_INGREDIENT WHERE ingredient_id = ?")) {
+                ps.setInt(1, ingredient.getId());
+                ps.executeUpdate();
+            }
+            try (var ps2 = conn.prepareStatement("DELETE FROM INGREDIENT WHERE id = ?")) {
+                ps2.setInt(1, ingredient.getId());
+                ps2.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -71,7 +109,14 @@ public class IngredientDAO {
      * @param ingredient the Ingredient object containing updated information.
      */
     public void updateIngredient(Ingredient ingredient) {
-        
+        try (var conn = connectionUtil.getConnection();
+             var ps = conn.prepareStatement("UPDATE INGREDIENT SET name = ? WHERE id = ?")) {
+            ps.setString(1, ingredient.getName());
+            ps.setInt(2, ingredient.getId());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -80,7 +125,17 @@ public class IngredientDAO {
      * @return a list of all Ingredient objects.
      */
     public List<Ingredient> getAllIngredients() {
-        return null;
+        List<Ingredient> ingredients = new ArrayList<>();
+        try (var conn = connectionUtil.getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT * FROM INGREDIENT ORDER BY id")) {
+            while (rs.next()) {
+                ingredients.add(mapSingleRow(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ingredients;
     }
 
     /**
@@ -90,7 +145,14 @@ public class IngredientDAO {
      * @return a Page of Ingredient objects containing the retrieved ingredients.
      */
     public Page<Ingredient> getAllIngredients(PageOptions pageOptions) {
-        return null;
+        try (var conn = connectionUtil.getConnection();
+             var stmt = conn.createStatement();
+             var rs = stmt.executeQuery("SELECT * FROM INGREDIENT ORDER BY " + pageOptions.getSortBy() + " " + pageOptions.getSortDirection())) {
+            return pageResults(rs, pageOptions);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new Page<>();
     }
 
     /**
@@ -100,7 +162,19 @@ public class IngredientDAO {
      * @return a list of Ingredient objects that match the search term.
      */
     public List<Ingredient> searchIngredients(String term) {
-        return null;
+        List<Ingredient> ingredients = new ArrayList<>();
+        try (var conn = connectionUtil.getConnection();
+             var ps = conn.prepareStatement("SELECT * FROM INGREDIENT WHERE name LIKE ? ORDER BY id")) {
+            ps.setString(1, "%" + term + "%");
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ingredients.add(mapSingleRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ingredients;
     }
 
     /**
@@ -111,7 +185,17 @@ public class IngredientDAO {
      * @return a Page of Ingredient objects containing the retrieved ingredients.
      */
     public Page<Ingredient> searchIngredients(String term, PageOptions pageOptions) {
-        return null;
+        try (var conn = connectionUtil.getConnection();
+             var ps = conn.prepareStatement(
+                     "SELECT * FROM INGREDIENT WHERE name LIKE ? ORDER BY " + pageOptions.getSortBy() + " " + pageOptions.getSortDirection())) {
+            ps.setString(1, "%" + term + "%");
+            try (var rs = ps.executeQuery()) {
+                return pageResults(rs, pageOptions);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new Page<>();
     }
 
     // below are helper methods for your convenience

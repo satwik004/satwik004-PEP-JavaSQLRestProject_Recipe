@@ -41,6 +41,20 @@ public class AuthenticationService {
      * @return a session token if the login is successful; null otherwise
      */
     public String login(Chef chef) {
+        if (chef == null || chef.getUsername() == null || chef.getPassword() == null) {
+            return null;
+        }
+
+        // naive auth: find chef by username from available list
+        // Since DAO is not directly available, rely on service search by term and exact match
+        var possibleMatches = chefService.searchChefs(chef.getUsername());
+        for (Chef existing : possibleMatches) {
+            if (existing.getUsername().equals(chef.getUsername()) && existing.getPassword().equals(chef.getPassword())) {
+                String token = existing.getUsername() + ":" + existing.getPassword();
+                loggedInUsers.put(token, existing);
+                return token;
+            }
+        }
         return null; 
     }
 
@@ -51,7 +65,9 @@ public class AuthenticationService {
      */
 
     public void logout(String token) {
-        
+        if (token != null) {
+            loggedInUsers.remove(token);
+        }
     }
 
     /**
@@ -61,7 +77,17 @@ public class AuthenticationService {
 	 * @return the registered chef object
 	 */
     public Chef registerChef(Chef chef) {
-        return null;
+        if (chef == null || chef.getUsername() == null) {
+            return null;
+        }
+        // Check if username exists
+        var existing = chefService.searchChefs(chef.getUsername());
+        boolean usernameTaken = existing.stream().anyMatch(c -> c.getUsername().equals(chef.getUsername()));
+        if (usernameTaken) {
+            return null;
+        }
+        chefService.saveChef(chef);
+        return chef;
     }
 
     /**
@@ -71,6 +97,6 @@ public class AuthenticationService {
      * @return the Chef object associated with the session token; null if not found
      */
     public Chef getChefFromSessionToken(String token) {
-        return null;
+        return loggedInUsers.get(token);
     }
 }

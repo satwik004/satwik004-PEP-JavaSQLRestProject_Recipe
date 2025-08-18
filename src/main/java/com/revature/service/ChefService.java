@@ -6,6 +6,7 @@ import java.util.Optional;
 import com.revature.model.Chef;
 import com.revature.dao.ChefDAO;
 import com.revature.util.Page;
+import com.revature.util.PageOptions;
 
 /**
  * The ChefService class provides services related to Chef objects,
@@ -28,7 +29,7 @@ public class ChefService {
      * @param chefDao the ChefDao to be used by this service for data access
      */
     public ChefService(ChefDAO chefDAO) {
-        
+        this.chefDAO = chefDAO;
     }
 
     /**
@@ -39,7 +40,7 @@ public class ChefService {
      *         an empty Optional if not found
      */
     public Optional<Chef> findChef(int id) {
-        return null; 
+        return Optional.ofNullable(chefDAO.getChefById(id)); 
     }
 
     /**
@@ -50,7 +51,12 @@ public class ChefService {
      * @param chef the Chef entity to be saved or updated
      */
     public void saveChef(Chef chef) {
-        
+        if (chef.getId() == 0) {
+            int newId = chefDAO.createChef(chef);
+            chef.setId(newId);
+        } else {
+            chefDAO.updateChef(chef);
+        }
     }
 
     
@@ -62,7 +68,10 @@ public class ChefService {
      * @return a list of Chefs matching the search criteria, or all Chefs if term is null
      */
     public List<Chef> searchChefs(String term) {
-        return null;
+        if (term == null) {
+            return chefDAO.getAllChefs();
+        }
+        return chefDAO.searchChefsByTerm(term);
     }
 
     /**
@@ -71,7 +80,10 @@ public class ChefService {
      * @param id the unique identifier of the Chef to be deleted
      */
     public void deleteChef(int id) {
-        
+        Chef chef = chefDAO.getChefById(id);
+        if (chef != null) {
+            chefDAO.deleteChef(chef);
+        }
     }
 
     /**
@@ -86,7 +98,11 @@ public class ChefService {
      */
 	
     public Page<Chef> searchChefs(String term, int page, int pageSize, String sortBy, String sortDirection) {
-        return null;
+        PageOptions options = new PageOptions(page, pageSize, sortBy, sortDirection);
+        if (term == null) {
+            return chefDAO.getAllChefs(options);
+        }
+        return chefDAO.searchChefsByTerm(term, options);
     }
 }
 
