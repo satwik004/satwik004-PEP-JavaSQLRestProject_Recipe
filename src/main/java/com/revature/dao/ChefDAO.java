@@ -48,7 +48,7 @@ public class ChefDAO {
                 chefs.add(mapSingleRow(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch all chefs", e);
         }
         return chefs;
     }
@@ -65,7 +65,7 @@ public class ChefDAO {
              var rs = stmt.executeQuery("SELECT * FROM CHEF ORDER BY " + pageOptions.getSortBy() + " " + pageOptions.getSortDirection())) {
             return pageResults(rs, pageOptions);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch paginated chefs", e);
         }
         return new Page<>();
     }
@@ -86,7 +86,7 @@ public class ChefDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch chef by id: " + id, e);
         }
         return null;
     }
@@ -115,7 +115,7 @@ public class ChefDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to create chef", e);
         }
         return 0;
     }
@@ -136,7 +136,7 @@ public class ChefDAO {
             ps.setInt(5, chef.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to update chef with id: " + chef.getId(), e);
         }
     }
 
@@ -151,7 +151,7 @@ public class ChefDAO {
             ps.setInt(1, chef.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to delete chef with id: " + chef.getId(), e);
         }
     }
 
@@ -172,7 +172,7 @@ public class ChefDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to search chefs by term: " + term, e);
         }
         return chefs;
     }
@@ -193,7 +193,7 @@ public class ChefDAO {
                 return pageResults(rs, pageOptions);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to search paginated chefs by term: " + term, e);
         }
         return new Page<>();
     }

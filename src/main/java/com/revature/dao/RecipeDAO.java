@@ -67,7 +67,7 @@ public class RecipeDAO {
                 recipes.add(mapSingleRow(rs));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch all recipes", e);
         }
         return recipes;
     }
@@ -85,9 +85,8 @@ public class RecipeDAO {
              var rs = ps.executeQuery()) {
             return pageResults(rs, pageOptions);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to fetch paginated recipes", e);
         }
-        return new Page<>();
     }
 
     /**
@@ -118,7 +117,7 @@ public class RecipeDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to search recipes by term: " + term, e);
         }
         return recipes;
     }
@@ -140,9 +139,8 @@ public class RecipeDAO {
                 return pageResults(rs, pageOptions);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to search paginated recipes by term: " + term, e);
         }
-        return new Page<>();
     }
 
     /**
@@ -162,7 +160,7 @@ public class RecipeDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to get recipe by id: " + id, e);
         }
         return null;
     }
@@ -192,7 +190,7 @@ public class RecipeDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to create recipe", e);
         }
         return 0;
     }
@@ -211,7 +209,7 @@ public class RecipeDAO {
             ps.setInt(3, recipe.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to update recipe with id: " + recipe.getId(), e);
         }
     }
 
@@ -232,7 +230,7 @@ public class RecipeDAO {
                 ps2.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to delete recipe with id: " + recipe.getId(), e);
         }
     }
 
