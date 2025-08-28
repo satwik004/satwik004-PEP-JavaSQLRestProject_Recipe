@@ -44,6 +44,9 @@ public class RecipeController {
      */
     public Handler fetchAllRecipes = ctx -> {
         String term = ctx.queryParam("term");
+        if (term == null) {
+            term = ctx.queryParam("name");
+        }
         boolean paginate = ctx.queryParam("page") != null || ctx.queryParam("pageSize") != null
                 || ctx.queryParam("sortBy") != null || ctx.queryParam("sortDirection") != null;
 
@@ -54,15 +57,18 @@ public class RecipeController {
             String sortDirection = getParamAsClassOrElse(ctx, "sortDirection", String.class, "asc");
 
             Page<Recipe> result = recipeService.searchRecipes(term, page, pageSize, sortBy, sortDirection);
-            ctx.status(200).json(result);
+            ctx.status(200);
+            ctx.json(result);
             return;
         }
 
         var list = recipeService.searchRecipes(term);
         if (list == null || list.isEmpty()) {
-            ctx.status(404).result("No recipes found");
+            ctx.status(404);
+            ctx.result("No recipes found");
         } else {
-            ctx.status(200).json(list);
+            ctx.status(200);
+            ctx.json(list);
         }
     };
 
@@ -77,8 +83,8 @@ public class RecipeController {
         int id = Integer.parseInt(ctx.pathParam("id"));
         recipeService.findRecipe(id)
                 .ifPresentOrElse(
-                        recipe -> ctx.status(200).json(recipe),
-                        () -> ctx.status(404).result("Recipe not found")
+                        recipe -> { ctx.status(200); ctx.json(recipe); },
+                        () -> { ctx.status(404); ctx.result("Recipe not found"); }
                 );
     };
 
@@ -109,6 +115,8 @@ public class RecipeController {
         if (recipe.getAuthor() == null) {
             recipe.setAuthor(chef);
         }
+        // Ensure this is treated as a create regardless of client-sent id
+        recipe.setId(0);
         recipeService.saveRecipe(recipe);
         ctx.status(201);
     };
@@ -122,7 +130,15 @@ public class RecipeController {
      */
     public Handler deleteRecipe = ctx -> {
         int id = Integer.parseInt(ctx.pathParam("id"));
+        var maybeExisting = recipeService.findRecipe(id);
+        if (maybeExisting.isEmpty()) {
+            ctx.status(404);
+            ctx.result("Recipe not found");
+            return;
+        }
         recipeService.deleteRecipe(id);
+        ctx.status(200);
+        ctx.result("Recipe deleted successfully.");
     };
 
     /**
@@ -143,7 +159,8 @@ public class RecipeController {
         Recipe updated = ctx.bodyAsClass(Recipe.class);
         updated.setId(id);
         recipeService.saveRecipe(updated);
-        ctx.status(200).json(updated);
+        ctx.status(200);
+        ctx.json(updated);
     };
 
     /**

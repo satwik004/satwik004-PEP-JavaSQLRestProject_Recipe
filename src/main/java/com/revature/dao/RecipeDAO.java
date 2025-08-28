@@ -79,9 +79,10 @@ public class RecipeDAO {
      * @return a paginated list of Recipe objects
      */
     public Page<Recipe> getAllRecipes(PageOptions pageOptions) {
+        String sql = "SELECT * FROM RECIPE ORDER BY " + pageOptions.getSortBy() + " " + pageOptions.getSortDirection();
         try (var conn = connectionUtil.getConnection();
-             var stmt = conn.createStatement();
-             var rs = stmt.executeQuery("SELECT * FROM RECIPE ORDER BY " + pageOptions.getSortBy() + " " + pageOptions.getSortDirection())) {
+             var ps = conn.prepareStatement(sql);
+             var rs = ps.executeQuery()) {
             return pageResults(rs, pageOptions);
         } catch (SQLException e) {
             e.printStackTrace();
